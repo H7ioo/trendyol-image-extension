@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
 
-  "name": "Chrome Extension TypeScript Starter",
-  "description": "Chrome Extension, TypeScript, Visual Studio Code",
+  "name": "Trendyol Image Selector Extension",
+  "description": "Select Trendyol Images Easily and Paste Into Excel",
   "version": "1.0",
 
   "options_ui": {
@@ -16,7 +16,7 @@
 
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://partner.trendyol.com/"],
       "js": ["js/vendor.js", "js/content_script.js"]
     }
   ],
@@ -27,5 +27,5 @@
 
   "permissions": ["storage", "scripting"],
 
-  "host_permissions": ["<all_urls>"]
+  "host_permissions": ["https://partner.trendyol.com/"]
 }
