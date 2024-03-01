@@ -1,9 +1,137 @@
-chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-  if (msg.color) {
-    console.log("Receive color = " + msg.color);
-    document.body.style.backgroundColor = msg.color;
-    sendResponse("Change color to " + msg.color);
-  } else {
-    sendResponse("Color message is none.");
+// chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
+//   if (msg.color) {
+//     console.log("Receive color = " + msg.color);
+//     document.body.style.backgroundColor = msg.color;
+//     sendResponse("Change color to " + msg.color);
+//   } else {
+//     sendResponse("Color message is none.");
+//   }
+// });
+
+// document.querySelectorAll(".galleries > li > .image-item");
+// img
+// .replace("image/resize,w_500,limit_0", "style/resized");
+
+// If the image is in the array remove it, if it is not there add it.
+//   document.querySelectorAll(".galleries > li > .image-item")[0].addEventListener("click", function (e) {
+//     if (e.target) {
+//         console.log(this.querySelector("img").src)
+//     }
+// });
+
+window.addEventListener("load", async function () {
+  const EXCEL_SPACE = "	";
+  let urls: string[] = [];
+
+  function fixImageUrl(url: string) {
+    return url.replace("image/resize,w_500,limit_0", "style/resized");
   }
+
+  // function waitForElm(selector: string) {
+  //   return new Promise((resolve) => {
+  //     if (document.querySelector(selector)) {
+  //       return resolve(document.querySelector(selector));
+  //     }
+
+  //     const observer = new MutationObserver((mutations) => {
+  //       if (document.querySelector(selector)) {
+  //         observer.disconnect();
+  //         resolve(document.querySelector(selector));
+  //       }
+  //     });
+
+  //     // If you get "parameter 1 is not of type 'Node'" error, see https://stackoverflow.com/a/77855838/492336
+  //     observer.observe(document.body, {
+  //       childList: true,
+  //       subtree: true,
+  //     });
+  //   });
+  // }
+
+  let observer = new MutationObserver((mutations) => {
+    // this.alert("Fotoğraf seçmeye başlayabilirsiniz!");
+    // Remove all the elements when the elements gets updated
+    urls = [];
+    for (let mutation of mutations) {
+      for (let image of mutation.addedNodes) {
+        image.addEventListener("click", function (e) {
+          const imageSrc = (image as Element).querySelector("img")?.src;
+          if (imageSrc) {
+            const url = fixImageUrl(imageSrc);
+            if (urls.includes(url)) {
+              urls.splice(urls.indexOf(url), 1);
+            } else {
+              urls.push(url);
+            }
+          }
+        });
+      }
+    }
+  });
+
+  observer.observe(document.querySelector(".galleries")!, {
+    childList: true,
+    subtree: true,
+  });
+
+  // Waits for element to exists in the DOM
+  // await waitForElm(".galleries > li > .image-item");
+
+  // const images = document.querySelectorAll(".galleries > li > .image-item");
+
+  // On click add to / or remove from / the array of urls (IF CLICK ON SELECT OR 3 DOTS NOTHING WILL HAPPEN)
+  // images.forEach((image) => {
+  //   image.addEventListener("click", function (e) {
+  //     const imageSrc = image.querySelector("img")?.src;
+  //     if (imageSrc) {
+  //       const url = fixImageUrl(imageSrc);
+  //       if (urls.includes(url)) {
+  //         urls.splice(urls.indexOf(url), 1);
+  //       } else {
+  //         urls.push(url);
+  //       }
+  //     }
+  //   });
+  // });
+
+  // When popup copy is triggered create textarea copy the text and delete the textarea
+  chrome.runtime.onMessage.addListener(function (
+    message,
+    sender,
+    sendResponse
+  ) {
+    if (message.action == "copy") {
+      if (!urls.length) {
+        sendResponse({ message: "Fotoğraf seçilmedi!" });
+        return true;
+      }
+      const pasteFormat = urls.join(EXCEL_SPACE);
+
+      // Create a temporary textarea element
+      var textarea = document.createElement("textarea");
+
+      // Set its style to be offscreen
+      textarea.style.cssText = "position:absolute; left:-99999px";
+
+      // Set the value of the textarea to the text you want to copy
+      textarea.value = pasteFormat;
+
+      // Append the textarea to the document body
+      document.body.appendChild(textarea);
+
+      // Select the content of the textarea
+      textarea.select();
+
+      // Execute the copy command
+      document.execCommand("copy");
+
+      // Remove the textarea from the document
+      document.body.removeChild(textarea);
+
+      sendResponse({
+        message: `Başarıyla ${urls.length} fotoğraf kopyalandı!`,
+      });
+    }
+    return true;
+  });
 });
