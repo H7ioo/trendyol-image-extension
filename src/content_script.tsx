@@ -8,6 +8,8 @@
 //   }
 // });
 
+import { ChangeEvent } from "react";
+
 // document.querySelectorAll(".galleries > li > .image-item");
 // img
 // .replace("image/resize,w_500,limit_0", "style/resized");
@@ -71,6 +73,25 @@ window.addEventListener("load", async function () {
   //   });
   // }
 
+  function imageClick(e: Event, image: Node) {
+    const event = e as unknown as ChangeEvent;
+    if (
+      // event.target.className === "option-dots" ||
+      event.target.className === "gallery-item"
+    )
+      return;
+    const imageSrc = (image as Element).querySelector("img")?.src;
+    if (imageSrc) {
+      const url = fixImageUrl(imageSrc);
+      if (urls.includes(url)) {
+        urls.splice(urls.indexOf(url), 1);
+      } else {
+        urls.push(url);
+      }
+    }
+    updateButtonUI(button, urls.length);
+  }
+
   let observer = new MutationObserver((mutations) => {
     // this.alert("Fotoğraf seçmeye başlayabilirsiniz!");
     // Remove all the elements when the elements gets updated
@@ -78,18 +99,8 @@ window.addEventListener("load", async function () {
     updateButtonUI(button, urls.length);
     for (let mutation of mutations) {
       for (let image of mutation.addedNodes) {
-        image.addEventListener("click", function (e) {
-          const imageSrc = (image as Element).querySelector("img")?.src;
-          if (imageSrc) {
-            const url = fixImageUrl(imageSrc);
-            if (urls.includes(url)) {
-              urls.splice(urls.indexOf(url), 1);
-            } else {
-              urls.push(url);
-            }
-          }
-          updateButtonUI(button, urls.length);
-        });
+        image.removeEventListener("click", (e) => imageClick(e, image));
+        image.addEventListener("click", (e) => imageClick(e, image));
       }
     }
   });
