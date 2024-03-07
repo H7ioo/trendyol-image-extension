@@ -16,7 +16,7 @@
 
   "content_scripts": [
     {
-      "matches": ["https://partner.trendyol.com/"],
+      "matches": ["<all_urls>"],
       "js": ["js/vendor.js", "js/content_script.js"]
     }
   ],
@@ -27,5 +27,5 @@
 
   "permissions": ["storage", "scripting"],
 
-  "host_permissions": ["https://partner.trendyol.com/"]
+  "host_permissions": ["<all_urls>"]
 }

@@ -27,6 +27,29 @@ window.addEventListener("load", async function () {
     return url.replace("image/resize,w_500,limit_0", "style/resized");
   }
 
+  function buttonSuccessUI(button: HTMLButtonElement, message: string) {
+    button.textContent = `${message}`;
+  }
+
+  function updateButtonUI(button: HTMLButtonElement, count: number) {
+    button.textContent = `${count} Fotoğraf Kopyala`;
+  }
+
+  const headerBox = this.document.querySelector(".box-header");
+  const button = document.createElement("button");
+  button.style.fontSize = "12px";
+  button.style.backgroundColor = "#f27a1a";
+  button.style.color = "white";
+  button.style.fontWeight = "bold";
+  button.style.paddingBlock = "5px";
+  button.style.whiteSpace = "whiteSpace";
+  button.style.border = "none";
+  button.style.borderRadius = "3px";
+  button.style.marginLeft = "15px";
+
+  updateButtonUI(button, urls.length);
+  headerBox?.appendChild(button);
+
   // function waitForElm(selector: string) {
   //   return new Promise((resolve) => {
   //     if (document.querySelector(selector)) {
@@ -52,6 +75,7 @@ window.addEventListener("load", async function () {
     // this.alert("Fotoğraf seçmeye başlayabilirsiniz!");
     // Remove all the elements when the elements gets updated
     urls = [];
+    updateButtonUI(button, urls.length);
     for (let mutation of mutations) {
       for (let image of mutation.addedNodes) {
         image.addEventListener("click", function (e) {
@@ -64,6 +88,7 @@ window.addEventListener("load", async function () {
               urls.push(url);
             }
           }
+          updateButtonUI(button, urls.length);
         });
       }
     }
@@ -94,44 +119,57 @@ window.addEventListener("load", async function () {
   //   });
   // });
 
-  // When popup copy is triggered create textarea copy the text and delete the textarea
-  chrome.runtime.onMessage.addListener(function (
-    message,
-    sender,
-    sendResponse
-  ) {
-    if (message.action == "copy") {
-      if (!urls.length) {
-        sendResponse({ message: "Fotoğraf seçilmedi!" });
-        return true;
-      }
-      const pasteFormat = urls.join(EXCEL_SPACE);
-
-      // Create a temporary textarea element
-      var textarea = document.createElement("textarea");
-
-      // Set its style to be offscreen
-      textarea.style.cssText = "position:absolute; left:-99999px";
-
-      // Set the value of the textarea to the text you want to copy
-      textarea.value = pasteFormat;
-
-      // Append the textarea to the document body
-      document.body.appendChild(textarea);
-
-      // Select the content of the textarea
-      textarea.select();
-
-      // Execute the copy command
-      document.execCommand("copy");
-
-      // Remove the textarea from the document
-      document.body.removeChild(textarea);
-
-      sendResponse({
-        message: `Başarıyla ${urls.length} fotoğraf kopyalandı!`,
-      });
+  button.addEventListener("click", () => {
+    const pasteFormat = urls.join(EXCEL_SPACE);
+    try {
+      this.navigator.clipboard.writeText(pasteFormat);
+      buttonSuccessUI(button, "Başarıyla Kopyalandı!");
+      setTimeout(() => {
+        updateButtonUI(button, urls.length);
+      }, 1500);
+    } catch (error) {
+      this.alert(`Hata oluştu! ${error}`);
     }
-    return true;
   });
+
+  // When popup copy is triggered create textarea copy the text and delete the textarea
+  // chrome.runtime.onMessage.addListener(function (
+  //   message,
+  //   sender,
+  //   sendResponse
+  // ) {
+  //   if (message.action == "copy") {
+  //     if (!urls.length) {
+  //       sendResponse({ message: "Fotoğraf seçilmedi!" });
+  //       return true;
+  //     }
+  //     const pasteFormat = urls.join(EXCEL_SPACE);
+
+  //     // Create a temporary textarea element
+  //     var textarea = document.createElement("textarea");
+
+  //     // Set its style to be offscreen
+  //     textarea.style.cssText = "position:absolute; left:-99999px";
+
+  //     // Set the value of the textarea to the text you want to copy
+  //     textarea.value = pasteFormat;
+
+  //     // Append the textarea to the document body
+  //     document.body.appendChild(textarea);
+
+  //     // Select the content of the textarea
+  //     textarea.select();
+
+  //     // Execute the copy command
+  //     document.execCommand("copy");
+
+  //     // Remove the textarea from the document
+  //     document.body.removeChild(textarea);
+
+  //     sendResponse({
+  //       message: `Başarıyla ${urls.length} fotoğraf kopyalandı!`,
+  //     });
+  //   }
+  //   return true;
+  // });
 });
