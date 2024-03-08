@@ -99,8 +99,8 @@ window.addEventListener("load", async function () {
     updateButtonUI(button, urls.length);
     for (let mutation of mutations) {
       for (let image of mutation.addedNodes) {
-        image.removeEventListener("click", (e) => imageClick(e, image));
-        image.addEventListener("click", (e) => imageClick(e, image));
+        (image as HTMLLIElement).onclick = null;
+        (image as HTMLLIElement).onclick = (e: Event) => imageClick(e, image);
       }
     }
   });
