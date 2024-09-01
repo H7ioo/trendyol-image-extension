@@ -1,186 +1,156 @@
-// chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-//   if (msg.color) {
-//     console.log("Receive color = " + msg.color);
-//     document.body.style.backgroundColor = msg.color;
-//     sendResponse("Change color to " + msg.color);
-//   } else {
-//     sendResponse("Color message is none.");
-//   }
-// });
+const mainButtonStyles: Partial<CSSStyleDeclaration> = {
+  fontSize: "16px",
+  backgroundColor: "#000",
+  color: "white",
+  fontWeight: "bold",
+  paddingBlock: "10px",
+  paddingInline: "15px",
+  whiteSpace: "whiteSpace",
+  border: "none",
+  borderRadius: "5px",
+  transition: "all",
+  transitionDuration: "0.2s",
+};
+let styleSheetAdded = false;
+const createButton = (
+  textContent: string,
+  styles: Partial<CSSStyleDeclaration>
+) => {
+  const className = "download-button-extension";
 
-import { ChangeEvent } from "react";
+  const button = document.createElement("button");
+  button.textContent = textContent;
+  button.classList.add(className);
 
-// document.querySelectorAll(".galleries > li > .image-item");
-// img
-// .replace("image/resize,w_500,limit_0", "style/resized");
+  Object.assign(button.style, {
+    ...mainButtonStyles,
+    ...styles,
+  });
 
-// If the image is in the array remove it, if it is not there add it.
-//   document.querySelectorAll(".galleries > li > .image-item")[0].addEventListener("click", function (e) {
-//     if (e.target) {
-//         console.log(this.querySelector("img").src)
-//     }
-// });
+  if (!styleSheetAdded) {
+    const style = document.createElement("style");
+    style.setAttribute("type", "text/css");
 
-window.addEventListener("load", async function () {
-  const EXCEL_SPACE = "	";
+    const rgb = button.style.backgroundColor;
+    const rgbValues = rgb.slice(rgb.indexOf("(") + 1, rgb.indexOf(")"));
+
+    const css = `
+      .${className}:hover {
+        background-color: rgba(${rgbValues}, .9) !important;
+      }
+  `;
+
+    // @ts-ignore
+    if (style.styleSheet) {
+      // IE
+      // @ts-ignore
+      style.styleSheet.cssText = css;
+    } else {
+      style.appendChild(document.createTextNode(css));
+    }
+
+    document.head.appendChild(style);
+    styleSheetAdded = true;
+  }
+
+  return button;
+};
+
+function removeSourceSize(url: string) {
+  return url.replace("image/resize,w_500,limit_0", "style/resized");
+}
+
+function updateButtonIsLoading(
+  button: HTMLButtonElement,
+  textContent: string,
+  isDisabled: boolean
+) {
+  button.textContent = textContent;
+  button.disabled = isDisabled;
+}
+
+function updateButtonUI(button: HTMLButtonElement, newText: string) {
+  button.textContent = newText;
+}
+
+function showMessageButtonUI(
+  button: HTMLButtonElement,
+  message: string,
+  ms = 1500
+) {
+  const prevTextContent = button.textContent;
+  button.textContent = message;
+  setTimeout(() => {
+    button.textContent = prevTextContent;
+  }, ms);
+}
+
+function inject(src: string) {
+  const script = document.createElement("script");
+  script.src = chrome.runtime.getURL(src);
+  script.onload = function () {
+    console.log("INJ");
+    // @ts-ignore
+    // this.remove();
+  };
+  const head = document.head || document.documentElement;
+  head.appendChild(script);
+}
+
+function initiateCopyImageButton() {
+  const EXCEL_HORIZONTAL_SPACE = "	";
   let urls: string[] = [];
 
-  function fixImageUrl(url: string) {
-    return url.replace("image/resize,w_500,limit_0", "style/resized");
-  }
+  // Inject script to access Vue's internal state
+  inject("/js/inject_script.js");
 
-  function buttonSuccessUI(button: HTMLButtonElement, message: string) {
-    button.textContent = `${message}`;
-  }
-
-  function updateButtonUI(button: HTMLButtonElement, count: number) {
-    button.textContent = `${count} Fotoğraf Kopyala`;
-  }
-
-  const headerBox = this.document.querySelector(".box-header");
-  const button = document.createElement("button");
-  button.style.fontSize = "12px";
-  button.style.backgroundColor = "#f27a1a";
-  button.style.color = "white";
-  button.style.fontWeight = "bold";
-  button.style.paddingBlock = "5px";
-  button.style.whiteSpace = "whiteSpace";
-  button.style.border = "none";
-  button.style.borderRadius = "3px";
-  button.style.marginLeft = "15px";
-
-  updateButtonUI(button, urls.length);
-  headerBox?.appendChild(button);
-
-  // function waitForElm(selector: string) {
-  //   return new Promise((resolve) => {
-  //     if (document.querySelector(selector)) {
-  //       return resolve(document.querySelector(selector));
-  //     }
-
-  //     const observer = new MutationObserver((mutations) => {
-  //       if (document.querySelector(selector)) {
-  //         observer.disconnect();
-  //         resolve(document.querySelector(selector));
-  //       }
-  //     });
-
-  //     // If you get "parameter 1 is not of type 'Node'" error, see https://stackoverflow.com/a/77855838/492336
-  //     observer.observe(document.body, {
-  //       childList: true,
-  //       subtree: true,
-  //     });
-  //   });
-  // }
-
-  function imageClick(e: Event, image: Node) {
-    const event = e as unknown as ChangeEvent;
-    if (
-      // event.target.className === "option-dots" ||
-      event.target.className === "gallery-item"
-    )
-      return;
-    const imageSrc = (image as Element).querySelector("img")?.src;
-    if (imageSrc) {
-      const url = fixImageUrl(imageSrc);
-      if (urls.includes(url)) {
-        urls.splice(urls.indexOf(url), 1);
-      } else {
-        urls.push(url);
-      }
+  // Listen for messages from inject_script.js
+  window.addEventListener("message", function (e) {
+    const { type, newValues } = e.data;
+    if (type === "GALLERY_ITEM_CHANGE") {
+      if (!newValues) throw new Error("Couldn't access the new values!");
+      updateButtonUI(button, `${newValues.length} Fotoğraf Kopyala`);
+      urls = newValues;
+      console.log(newValues);
     }
-    updateButtonUI(button, urls.length);
-  }
-
-  let observer = new MutationObserver((mutations) => {
-    // this.alert("Fotoğraf seçmeye başlayabilirsiniz!");
-    // Remove all the elements when the elements gets updated
-    urls = [];
-    updateButtonUI(button, urls.length);
-    for (let mutation of mutations) {
-      for (let image of mutation.addedNodes) {
-        (image as HTMLLIElement).onclick = null;
-        (image as HTMLLIElement).onclick = (e: Event) => imageClick(e, image);
-      }
-    }
+    console.log(e);
   });
 
-  observer.observe(document.querySelector(".galleries")!, {
-    childList: true,
-    subtree: true,
+  const headerBox = document.querySelector(".box-header");
+  if (!headerBox) throw new Error("Header box doesn't exist!");
+
+  const button = createButton(`${urls.length} Fotoğraf Kopyala`, {
+    fontSize: "12px",
+    backgroundColor: "#f27a1a",
+    color: "white",
+    fontWeight: "bold",
+    marginLeft: "15px",
   });
-
-  // Waits for element to exists in the DOM
-  // await waitForElm(".galleries > li > .image-item");
-
-  // const images = document.querySelectorAll(".galleries > li > .image-item");
-
-  // On click add to / or remove from / the array of urls (IF CLICK ON SELECT OR 3 DOTS NOTHING WILL HAPPEN)
-  // images.forEach((image) => {
-  //   image.addEventListener("click", function (e) {
-  //     const imageSrc = image.querySelector("img")?.src;
-  //     if (imageSrc) {
-  //       const url = fixImageUrl(imageSrc);
-  //       if (urls.includes(url)) {
-  //         urls.splice(urls.indexOf(url), 1);
-  //       } else {
-  //         urls.push(url);
-  //       }
-  //     }
-  //   });
-  // });
 
   button.addEventListener("click", () => {
-    const pasteFormat = urls.join(EXCEL_SPACE);
+    const pasteFormat = urls.join(EXCEL_HORIZONTAL_SPACE);
     try {
-      this.navigator.clipboard.writeText(pasteFormat);
-      buttonSuccessUI(button, "Başarıyla Kopyalandı!");
-      setTimeout(() => {
-        updateButtonUI(button, urls.length);
-      }, 1500);
+      // No URL
+      if (!pasteFormat) {
+        showMessageButtonUI(button, "Fotoğraf Seçilmedi!");
+        return;
+      }
+      navigator.clipboard.writeText(pasteFormat);
+      showMessageButtonUI(button, "Başarıyla Kopyalandı!");
     } catch (error) {
-      this.alert(`Hata oluştu! ${error}`);
+      alert(`Hata oluştu! ${error}`);
     }
   });
 
-  // When popup copy is triggered create textarea copy the text and delete the textarea
-  // chrome.runtime.onMessage.addListener(function (
-  //   message,
-  //   sender,
-  //   sendResponse
-  // ) {
-  //   if (message.action == "copy") {
-  //     if (!urls.length) {
-  //       sendResponse({ message: "Fotoğraf seçilmedi!" });
-  //       return true;
-  //     }
-  //     const pasteFormat = urls.join(EXCEL_SPACE);
+  headerBox.appendChild(button);
+}
 
-  //     // Create a temporary textarea element
-  //     var textarea = document.createElement("textarea");
-
-  //     // Set its style to be offscreen
-  //     textarea.style.cssText = "position:absolute; left:-99999px";
-
-  //     // Set the value of the textarea to the text you want to copy
-  //     textarea.value = pasteFormat;
-
-  //     // Append the textarea to the document body
-  //     document.body.appendChild(textarea);
-
-  //     // Select the content of the textarea
-  //     textarea.select();
-
-  //     // Execute the copy command
-  //     document.execCommand("copy");
-
-  //     // Remove the textarea from the document
-  //     document.body.removeChild(textarea);
-
-  //     sendResponse({
-  //       message: `Başarıyla ${urls.length} fotoğraf kopyalandı!`,
-  //     });
-  //   }
-  //   return true;
-  // });
+window.addEventListener("load", async function () {
+  // TODO: Add clear button
+  // TODO: Fix trendyol UI Issues like
+  // - box header style
+  // - Gorsel DND
+  // - Enter doesn't trigger search
+  // TODO: Add row copy and column copy
+  initiateCopyImageButton();
 });

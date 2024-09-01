@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
 
-  "name": "Trendyol Image Selector Extension",
+  "name": "Trendyol Image Selector",
   "description": "Select Trendyol Images Easily and Paste Into Excel",
-  "version": "1.0",
+  "version": "0.1",
 
   "options_ui": {
     "page": "options.html"
@@ -16,7 +16,7 @@
 
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://partner.trendyol.com/products/media-center"],
       "js": ["js/vendor.js", "js/content_script.js"]
     }
   ],
@@ -25,7 +25,14 @@
     "service_worker": "js/background.js"
   },
 
-  "permissions": ["storage", "scripting"],
+  "permissions": ["scripting", "activeTab"],
 
-  "host_permissions": ["<all_urls>"]
+  "host_permissions": ["https://partner.trendyol.com/"],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["js/inject_script.js"],
+      "matches": ["https://partner.trendyol.com/*"]
+    }
+  ]
 }
