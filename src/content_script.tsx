@@ -88,17 +88,19 @@ function showMessageButtonUI(
 function inject(src: string) {
   const script = document.createElement("script");
   script.src = chrome.runtime.getURL(src);
-  script.onload = function () {
-    console.log("INJ");
-    // @ts-ignore
-    // this.remove();
-  };
+  // script.onload = function () {
+  // };
   const head = document.head || document.documentElement;
   head.appendChild(script);
 }
 
-function initiateCopyImageButton() {
-  const EXCEL_HORIZONTAL_SPACE = "	";
+function initiateCopyImageButton({
+  buttonTextContent,
+  spacing,
+}: {
+  buttonTextContent: string;
+  spacing: string;
+}) {
   let urls: string[] = [];
 
   // Inject script to access Vue's internal state
@@ -109,26 +111,23 @@ function initiateCopyImageButton() {
     const { type, newValues } = e.data;
     if (type === "GALLERY_ITEM_CHANGE") {
       if (!newValues) throw new Error("Couldn't access the new values!");
-      updateButtonUI(button, `${newValues.length} Fotoğraf Kopyala`);
+      updateButtonUI(button, `${newValues.length} ${buttonTextContent}`);
       urls = newValues;
-      console.log(newValues);
     }
-    console.log(e);
   });
 
-  const headerBox = document.querySelector(".box-header");
+  const headerBox = document.querySelector(".box-header .search-bar");
   if (!headerBox) throw new Error("Header box doesn't exist!");
 
-  const button = createButton(`${urls.length} Fotoğraf Kopyala`, {
+  const button = createButton(`${urls.length} ${buttonTextContent}`, {
     fontSize: "12px",
     backgroundColor: "#f27a1a",
     color: "white",
     fontWeight: "bold",
-    marginLeft: "15px",
   });
 
   button.addEventListener("click", () => {
-    const pasteFormat = urls.join(EXCEL_HORIZONTAL_SPACE);
+    const pasteFormat = urls.join(spacing);
     try {
       // No URL
       if (!pasteFormat) {
@@ -145,12 +144,69 @@ function initiateCopyImageButton() {
   headerBox.appendChild(button);
 }
 
+function fixDropzoneOverflow() {
+  const dropzone: HTMLDivElement | null =
+    document.querySelector("div.dropzone");
+  if (!dropzone) throw new Error("Dropzone not found!");
+  dropzone.style.overflowY = "auto";
+}
+
+const EXCEL_HORIZONTAL_SPACE = "	";
+const EXCEL_VERTICAL_SPACE = `
+`;
+
+function fixSearchKeyPress() {
+  const container = document.querySelector("div.search-container");
+  const input = container?.querySelector("input");
+  const button = container?.querySelector("button");
+  if (!input || !button) throw new Error("Couldn't find input or button!");
+  input.onkeyup = (e) => {
+    if (e.key === "Enter") {
+      button.click();
+    }
+  };
+}
+
+function fixSearchBarStyling() {
+  const searchBar: HTMLDivElement | null =
+    document.querySelector("div.search-bar");
+  if (!searchBar) throw new Error("Couldn't find search bar!");
+  const searchBarChildren = Array.from(searchBar.children) as (
+    | HTMLDivElement
+    | HTMLButtonElement
+  )[];
+  if (!searchBarChildren.length)
+    throw new Error("Couldn't find search bar children");
+  searchBar.style.display = "flex";
+  searchBar.style.flexWrap = "wrap";
+  searchBar.style.gap = "10px";
+  console.log(searchBarChildren);
+  searchBarChildren.forEach((c) => {
+    c.style.setProperty("margin", "0", "important");
+    if (c.classList.contains("search-container")) {
+      c.style.setProperty("padding", "0", "important");
+    }
+  });
+}
+
 window.addEventListener("load", async function () {
   // TODO: Add clear button
-  // TODO: Fix trendyol UI Issues like
-  // - box header style
-  // - Gorsel DND
-  // - Enter doesn't trigger search
-  // TODO: Add row copy and column copy
-  initiateCopyImageButton();
+  initiateCopyImageButton({
+    spacing: EXCEL_VERTICAL_SPACE,
+    buttonTextContent: "Dikey Fotoğraf Kop.",
+  });
+
+  initiateCopyImageButton({
+    spacing: EXCEL_HORIZONTAL_SPACE,
+    buttonTextContent: "Yatay Fotoğraf Kop.",
+  });
+
+  fixDropzoneOverflow();
+
+  fixSearchKeyPress();
+
+  fixSearchBarStyling();
+
+  // TODO: on tab change update count of copy button...
+  // TODO: Apply fix searchBar styling on tab change
 });
