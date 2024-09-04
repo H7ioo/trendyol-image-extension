@@ -14,7 +14,7 @@ const mainButtonStyles: Partial<CSSStyleDeclaration> = {
 let styleSheetAdded = false;
 const createButton = (
   textContent: string,
-  styles: Partial<CSSStyleDeclaration>
+  styles?: Partial<CSSStyleDeclaration>
 ) => {
   const className = "download-button-extension";
 
@@ -107,7 +107,7 @@ function initiateCopyImageButton({
   inject("/js/inject_script.js");
 
   // Listen for messages from inject_script.js
-  window.addEventListener("message", function (e) {
+  window.addEventListener("message", function(e) {
     const { type, newValues } = e.data;
     if (type === "GALLERY_ITEM_CHANGE") {
       if (!newValues) throw new Error("Couldn't access the new values!");
@@ -189,7 +189,31 @@ function fixSearchBarStyling() {
   });
 }
 
-window.addEventListener("load", async function () {
+function clearSelectionButton() {
+  const button = createButton("Seçilenleri Sıfırla",
+    {
+      fontSize: "12px",
+      backgroundColor: "#f27a1a",
+      color: "white",
+      fontWeight: "bold",
+    });
+  const headerBox = document.querySelector(".box-header .search-bar");
+  if (!headerBox) throw new Error("Header box doesn't exist!");
+
+  button.onclick = (e) => {
+    // Send post meesage to inject_script to update vue state
+    window.postMessage(
+      {
+        type: "GALLERY_ITEM_RESET",
+      },
+      "*"
+    );
+  }
+
+  headerBox.append(button)
+}
+
+window.addEventListener("load", async function() {
   // TODO: Add clear button
   initiateCopyImageButton({
     spacing: EXCEL_VERTICAL_SPACE,
@@ -206,6 +230,8 @@ window.addEventListener("load", async function () {
   fixSearchKeyPress();
 
   fixSearchBarStyling();
+
+  clearSelectionButton();
 
   // TODO: on tab change update count of copy button...
   // TODO: Apply fix searchBar styling on tab change
