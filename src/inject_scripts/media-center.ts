@@ -8,11 +8,12 @@ type Files = {
   url: string;
 }[];
 
+const GLOBAL_URLS: string[] = [];
 
 function watchFilesState(_item: Element) {
   const item = _item as Element & {
     __vue__: {
-      files: Files,
+      files: Files;
       $watch: (
         field: string,
         callback: (oldValue: Files, newValue: Files) => void,
@@ -24,17 +25,47 @@ function watchFilesState(_item: Element) {
       ) => void;
     };
   };
-  // Post on the first init
-  window.postMessage({
-    type: "GALLERY_ITEM_CHANGE", newValues: item.__vue__.files.map(file => file.url)
-  }, "*")
+
+  // Reset on the first init (tab change)
+  window.postMessage(
+    {
+      type: "GALLERY_ITEM_CHANGE",
+      newValues: [],
+    },
+    "*"
+  );
+
+  // TODO: If you type the same word and search the files will reset but the count won't
+
   item.__vue__.$watch(
     "files",
-    function(newValue, oldValue) {
+    function (newValue, oldValue) {
+      const oldValuesIds = oldValue.map((val) => val.id);
+      const newValuesIds = newValue.map((val) => val.id);
+      const newAddedValue = newValue.filter(
+        (val) => !oldValuesIds.includes(val.id)
+      );
+      const newRemovedValue = oldValue.filter(
+        (val) => !newValuesIds.includes(val.id)
+      );
+      // We use this array to have the order correctly
+      // Reset required
+      if (oldValue.length === 0) {
+        GLOBAL_URLS.length = 0;
+      }
+      if (newAddedValue.length) {
+        GLOBAL_URLS.push(newAddedValue[0]!.url);
+      } else {
+        const filteredArray = GLOBAL_URLS.filter(
+          (url) => newRemovedValue[0]!.url !== url
+        );
+        GLOBAL_URLS.length = 0;
+        GLOBAL_URLS.push(...filteredArray);
+      }
       window.postMessage(
         {
           type: "GALLERY_ITEM_CHANGE",
-          newValues: newValue.map((file) => file.url),
+          newValues: GLOBAL_URLS,
         },
         "*"
       );
@@ -45,20 +76,28 @@ function watchFilesState(_item: Element) {
 
 (() => {
   let observer = new MutationObserver((mutations) => {
-    const isThereAddedNode = mutations.some(mutation => mutation.addedNodes.length);
+    const isThereAddedNode = mutations.some(
+      (mutation) => mutation.addedNodes.length
+    );
     // There is no image at this page (".gallery-item")
     if (!isThereAddedNode) {
-      window.postMessage({
-        type: "GALLERY_ITEM_CHANGE",
-        newValues: []
-      }, "*")
+      window.postMessage(
+        {
+          type: "GALLERY_ITEM_CHANGE",
+          newValues: [],
+        },
+        "*"
+      );
     }
     for (let mutation of mutations) {
       // Add $watch only on the first element (first element doesn't have siblings)
       if (!(mutation.previousSibling === null)) return;
       for (let _image of mutation.addedNodes) {
         const _item = document.querySelector(".gallery-item");
-        if (!_item) { console.error("Item not found!"); return }
+        if (!_item) {
+          console.error("Item not found!");
+          return;
+        }
         watchFilesState(_item);
       }
     }
@@ -66,7 +105,7 @@ function watchFilesState(_item: Element) {
 
   const galleryItem = document.querySelector(".gallery-item");
   if (galleryItem) {
-    watchFilesState(galleryItem)
+    watchFilesState(galleryItem);
   }
 
   observer.observe(document.querySelector(".galleries")!, {
@@ -76,28 +115,38 @@ function watchFilesState(_item: Element) {
 
   let tabObserver = new MutationObserver((mutations) => {
     for (let mutation of mutations) {
-      if (mutation.type !== "attributes" && mutation.attributeName !== "class") return;
-      window.postMessage({ type: "TAB_CHANGE" }, "*")
+      if (mutation.type !== "attributes" && mutation.attributeName !== "class")
+        return;
+      window.postMessage({ type: "TAB_CHANGE" }, "*");
     }
-  })
-  tabObserver.observe(
-    document.querySelector("ul.navbar-nav")!, { childList: true, subtree: true, attributes: true }
-  )
+  });
+  tabObserver.observe(document.querySelector("ul.navbar-nav")!, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+  });
 
-  window.addEventListener("message", function(e) {
+  window.addEventListener("message", function (e) {
     const { type } = e.data;
     if (type === "GALLERY_ITEM_RESET") {
       const _galleryItem = document.querySelector(".gallery-item");
-      if (!_galleryItem) { console.error("Couldn't find gallery item!"); return }
-      const galleryItem = _galleryItem as
-        Element
-        & {
-          __vue__: {
-            files: [{ isChecked: boolean }]
-          }
-        }
-      galleryItem.__vue__.files.forEach(f => f.isChecked = false);
+      if (!_galleryItem) {
+        console.error("Couldn't find gallery item!");
+        return;
+      }
+      const galleryItem = _galleryItem as Element & {
+        __vue__: {
+          files: [{ isChecked: boolean }];
+        };
+      };
+      galleryItem.__vue__.files.forEach((f) => (f.isChecked = false));
+      window.postMessage(
+        {
+          type: "GALLERY_ITEM_CHANGE",
+          newValues: [],
+        },
+        "*"
+      );
     }
   });
-
 })();
