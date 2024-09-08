@@ -88,8 +88,6 @@ function showMessageButtonUI(
 function inject(src: string) {
   const script = document.createElement("script");
   script.src = chrome.runtime.getURL(src);
-  // script.onload = function () {
-  // };
   const head = document.head || document.documentElement;
   head.appendChild(script);
 }
@@ -117,33 +115,9 @@ function initiateCopyImageButton({
     }
   })
 
-  // Proxy, Prototype or this weird syntax
-  //
-  // function processQ() {
-  //    // ... this will be called on each .push
-  // }
-  //
-  // var myEventsQ = [];
-  // myEventsQ.push = function() { Array.prototype.push.apply(this, arguments);  processQ();};
-  //
-  // const x = {
-  //   value: [] as string[],
-  //   listener: function(val: string[]) { },
-  //   set val(val: string[]) {
-  //     this.value = val;
-  //     this.listener(val)
-  //   },
-  //   get val() {
-  //     return this.value
-  //   },
-  //   registerListener: function(listener: (val: string[]) => void) {
-  //     this.listener = listener
-  //   }
-  // }
-
   const textFormat = (length: number) => `${buttonTextContent} (${length} adet)`;
   // Inject script to access Vue's internal state
-  inject("/js/inject_script.js");
+  inject("/js/inject_scripts/media-center.js");
 
   // Listen for messages from inject_script.js
   window.addEventListener("message", function(e) {

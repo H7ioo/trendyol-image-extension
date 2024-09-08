@@ -17,7 +17,7 @@
   "content_scripts": [
     {
       "matches": ["https://partner.trendyol.com/products/media-center"],
-      "js": ["js/vendor.js", "js/content_script.js"]
+      "js": ["js/vendor.js", "js/content_scripts/media-center.js"]
     }
   ],
 
@@ -31,7 +31,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["js/inject_script.js"],
+      "resources": ["js/inject_scripts/*.js"],
       "matches": ["https://partner.trendyol.com/*"]
     }
   ]

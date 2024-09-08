@@ -1,19 +1,39 @@
 const webpack = require("webpack");
 const path = require("path");
+const glob = require("glob");
 const CopyPlugin = require("copy-webpack-plugin");
 const srcDir = path.join(__dirname, "..", "src");
+
+function generateEntries(pattern) {
+  return glob.sync(pattern, { cwd: srcDir }).reduce((entries, file) => {
+    // Extract directory and base name for entry name
+    const relativePath = path.relative(srcDir, file);
+    const entryName = relativePath
+      .replace(/\\/g, "/")
+      .replace(/\.(tsx|ts)$/, "");
+
+    entries[entryName] = path.join(srcDir, file);
+    return entries;
+  }, {});
+}
 
 module.exports = {
   entry: {
     popup: path.join(srcDir, "popup.tsx"),
     options: path.join(srcDir, "options.tsx"),
     background: path.join(srcDir, "background.ts"),
-    content_script: path.join(srcDir, "content_script.tsx"),
-    inject_script: path.join(srcDir, "inject_script.ts"),
+    ...generateEntries("content_scripts/**/*.tsx"),
+    ...generateEntries("inject_scripts/**/*.ts"),
   },
   output: {
-    path: path.join(__dirname, "../dist/js"),
-    filename: "[name].js",
+    path: path.join(__dirname, "../dist/js"), // Output all files to the `dist/js` directory
+    filename: (pathData) => {
+      // Extract directory path part and include it in the output filename
+      const name = pathData.chunk.name;
+      // Ensure the output path is relative to `dist/js` and uses forward slashes
+      const outputPath = name.startsWith("../") ? name.slice(3) : name;
+      return `${outputPath}.js`;
+    },
   },
   optimization: {
     splitChunks: {
