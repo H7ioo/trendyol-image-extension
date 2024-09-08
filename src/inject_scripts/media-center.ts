@@ -76,27 +76,16 @@ function watchFilesState(_item: Element) {
 
 (() => {
   let observer = new MutationObserver((mutations) => {
-    const isThereAddedNode = mutations.some(
-      (mutation) => mutation.addedNodes.length
-    );
-    // There is no image at this page (".gallery-item")
-    if (!isThereAddedNode) {
-      window.postMessage(
-        {
-          type: "GALLERY_ITEM_CHANGE",
-          newValues: [],
-        },
-        "*"
-      );
-    }
     for (let mutation of mutations) {
+      console.log(mutation);
       // Add $watch only on the first element (first element doesn't have siblings)
-      if (!(mutation.previousSibling === null)) return;
+      if (!(mutation.previousSibling === null)) continue;
       for (let _image of mutation.addedNodes) {
+        console.log(_image);
         const _item = document.querySelector(".gallery-item");
         if (!_item) {
           console.error("Item not found!");
-          return;
+          continue;
         }
         watchFilesState(_item);
       }
@@ -118,6 +107,14 @@ function watchFilesState(_item: Element) {
       if (mutation.type !== "attributes" && mutation.attributeName !== "class")
         return;
       window.postMessage({ type: "TAB_CHANGE" }, "*");
+      // Reset gallery on tab change
+      window.postMessage(
+        {
+          type: "GALLERY_ITEM_CHANGE",
+          newValues: [],
+        },
+        "*"
+      );
     }
   });
   tabObserver.observe(document.querySelector("ul.navbar-nav")!, {
