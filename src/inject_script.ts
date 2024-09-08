@@ -12,6 +12,7 @@ type Files = {
 function watchFilesState(_item: Element) {
   const item = _item as Element & {
     __vue__: {
+      files: Files,
       $watch: (
         field: string,
         callback: (oldValue: Files, newValue: Files) => void,
@@ -23,6 +24,10 @@ function watchFilesState(_item: Element) {
       ) => void;
     };
   };
+  // Post on the first init
+  window.postMessage({
+    type: "GALLERY_ITEM_CHANGE", newValues: item.__vue__.files.map(file => file.url)
+  }, "*")
   item.__vue__.$watch(
     "files",
     function(newValue, oldValue) {
@@ -40,6 +45,14 @@ function watchFilesState(_item: Element) {
 
 (() => {
   let observer = new MutationObserver((mutations) => {
+    const isThereAddedNode = mutations.some(mutation => mutation.addedNodes.length);
+    // There is no image at this page (".gallery-item")
+    if (!isThereAddedNode) {
+      window.postMessage({
+        type: "GALLERY_ITEM_CHANGE",
+        newValues: []
+      }, "*")
+    }
     for (let mutation of mutations) {
       // Add $watch only on the first element (first element doesn't have siblings)
       if (!(mutation.previousSibling === null)) return;
@@ -60,6 +73,16 @@ function watchFilesState(_item: Element) {
     childList: true,
     subtree: true,
   });
+
+  let tabObserver = new MutationObserver((mutations) => {
+    for (let mutation of mutations) {
+      if (mutation.type !== "attributes" && mutation.attributeName !== "class") return;
+      window.postMessage({ type: "TAB_CHANGE" }, "*")
+    }
+  })
+  tabObserver.observe(
+    document.querySelector("ul.navbar-nav")!, { childList: true, subtree: true, attributes: true }
+  )
 
   window.addEventListener("message", function(e) {
     const { type } = e.data;

@@ -101,8 +101,47 @@ function initiateCopyImageButton({
   buttonTextContent: string;
   spacing: string;
 }) {
-  let urls: string[] = [];
+  // For proxy to work you shouldn't assign urls to anything because this will override the proxy. Use array methods instead.
+  let _urls: string[] = [];
+  let urls = new Proxy(_urls, {
+    set: function(target, key, value) {
+      if (key === "length") {
+        button.disabled = value < 1;
+        value < 1 ? button.style.opacity = ".65" : button.style.opacity = "1";
+        updateButtonUI(button, textFormat(value))
+      }
+      // @ts-ignore
+      target[key] = value;
+      return true;
 
+    }
+  })
+
+  // Proxy, Prototype or this weird syntax
+  //
+  // function processQ() {
+  //    // ... this will be called on each .push
+  // }
+  //
+  // var myEventsQ = [];
+  // myEventsQ.push = function() { Array.prototype.push.apply(this, arguments);  processQ();};
+  //
+  // const x = {
+  //   value: [] as string[],
+  //   listener: function(val: string[]) { },
+  //   set val(val: string[]) {
+  //     this.value = val;
+  //     this.listener(val)
+  //   },
+  //   get val() {
+  //     return this.value
+  //   },
+  //   registerListener: function(listener: (val: string[]) => void) {
+  //     this.listener = listener
+  //   }
+  // }
+
+  const textFormat = (length: number) => `${buttonTextContent} (${length} adet)`;
   // Inject script to access Vue's internal state
   inject("/js/inject_script.js");
 
@@ -111,20 +150,23 @@ function initiateCopyImageButton({
     const { type, newValues } = e.data;
     if (type === "GALLERY_ITEM_CHANGE") {
       if (!newValues) throw new Error("Couldn't access the new values!");
-      updateButtonUI(button, `${newValues.length} ${buttonTextContent}`);
-      urls = newValues;
+      urls.splice(0, urls.length, ...newValues);
     }
   });
 
   const headerBox = document.querySelector(".box-header .search-bar");
   if (!headerBox) throw new Error("Header box doesn't exist!");
 
-  const button = createButton(`${urls.length} ${buttonTextContent}`, {
+  const button = createButton(textFormat(urls.length), {
     fontSize: "12px",
     backgroundColor: "#f27a1a",
     color: "white",
     fontWeight: "bold",
   });
+
+  // Disabled on default
+  button.disabled = true;
+  button.style.opacity = ".65";
 
   button.addEventListener("click", () => {
     const pasteFormat = urls.join(spacing);
@@ -167,7 +209,7 @@ function fixSearchKeyPress() {
   };
 }
 
-function fixSearchBarStyling() {
+function fixSearchBarStyling(first = true) {
   const searchBar: HTMLDivElement | null =
     document.querySelector("div.search-bar");
   if (!searchBar) throw new Error("Couldn't find search bar!");
@@ -180,17 +222,34 @@ function fixSearchBarStyling() {
   searchBar.style.display = "flex";
   searchBar.style.flexWrap = "wrap";
   searchBar.style.gap = "10px";
-  console.log(searchBarChildren);
+
   searchBarChildren.forEach((c) => {
     c.style.setProperty("margin", "0", "important");
     if (c.classList.contains("search-container")) {
       c.style.setProperty("padding", "0", "important");
     }
   });
+
+  if (!first) return;
+  window.addEventListener("message", function(e) {
+    const { type } = e.data;
+    if (type === "TAB_CHANGE") {
+      fixSearchBarStyling(false);
+    }
+  });
+}
+
+function moveSearchBarToTheEnd() {
+  const searchBar = document.querySelector("div.search-container");
+  if (!searchBar) {
+    throw new Error("Container or Searchbar couldn't found!");
+  }
+  const parent = searchBar.parentElement;
+  parent?.append(searchBar);
 }
 
 function clearSelectionButton() {
-  const button = createButton("Seçilenleri Sıfırla",
+  const button = createButton("Seçilenleri Kaldır",
     {
       fontSize: "12px",
       backgroundColor: "#f27a1a",
@@ -214,7 +273,6 @@ function clearSelectionButton() {
 }
 
 window.addEventListener("load", async function() {
-  // TODO: Add clear button
   initiateCopyImageButton({
     spacing: EXCEL_VERTICAL_SPACE,
     buttonTextContent: "Dikey Fotoğraf Kop.",
@@ -233,6 +291,6 @@ window.addEventListener("load", async function() {
 
   clearSelectionButton();
 
-  // TODO: on tab change update count of copy button...
-  // TODO: Apply fix searchBar styling on tab change
+  moveSearchBarToTheEnd();
+
 });
