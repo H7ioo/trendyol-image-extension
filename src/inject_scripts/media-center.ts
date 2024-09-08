@@ -58,7 +58,7 @@ function watchFilesState(_item: Element) {
       if (!(mutation.previousSibling === null)) return;
       for (let _image of mutation.addedNodes) {
         const _item = document.querySelector(".gallery-item");
-        if (!_item) throw new Error("Item not found!");
+        if (!_item) { console.error("Item not found!"); return }
         watchFilesState(_item);
       }
     }
@@ -88,7 +88,7 @@ function watchFilesState(_item: Element) {
     const { type } = e.data;
     if (type === "GALLERY_ITEM_RESET") {
       const _galleryItem = document.querySelector(".gallery-item");
-      if (!_galleryItem) throw new Error("Couldn't find gallery item!")
+      if (!_galleryItem) { console.error("Couldn't find gallery item!"); return }
       const galleryItem = _galleryItem as
         Element
         & {

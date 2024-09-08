@@ -123,13 +123,13 @@ function initiateCopyImageButton({
   window.addEventListener("message", function(e) {
     const { type, newValues } = e.data;
     if (type === "GALLERY_ITEM_CHANGE") {
-      if (!newValues) throw new Error("Couldn't access the new values!");
+      if (!newValues) { console.error("Couldn't access the new values!"); return }
       urls.splice(0, urls.length, ...newValues);
     }
   });
 
   const headerBox = document.querySelector(".box-header .search-bar");
-  if (!headerBox) throw new Error("Header box doesn't exist!");
+  if (!headerBox) { console.error("Header box doesn't exist!"); return }
 
   const button = createButton(textFormat(urls.length), {
     fontSize: "12px",
@@ -163,7 +163,7 @@ function initiateCopyImageButton({
 function fixDropzoneOverflow() {
   const dropzone: HTMLDivElement | null =
     document.querySelector("div.dropzone");
-  if (!dropzone) throw new Error("Dropzone not found!");
+  if (!dropzone) { console.error("Dropzone not found!"); return }
   dropzone.style.overflowY = "auto";
 }
 
@@ -175,7 +175,7 @@ function fixSearchKeyPress() {
   const container = document.querySelector("div.search-container");
   const input = container?.querySelector("input");
   const button = container?.querySelector("button");
-  if (!input || !button) throw new Error("Couldn't find input or button!");
+  if (!input || !button) { console.error("Couldn't find input or button!"); return }
   input.onkeyup = (e) => {
     if (e.key === "Enter") {
       button.click();
@@ -186,13 +186,12 @@ function fixSearchKeyPress() {
 function fixSearchBarStyling(first = true) {
   const searchBar: HTMLDivElement | null =
     document.querySelector("div.search-bar");
-  if (!searchBar) throw new Error("Couldn't find search bar!");
+  if (!searchBar) { console.error("Couldn't find search bar!"); return }
   const searchBarChildren = Array.from(searchBar.children) as (
     | HTMLDivElement
     | HTMLButtonElement
   )[];
-  if (!searchBarChildren.length)
-    throw new Error("Couldn't find search bar children");
+  if (!searchBarChildren.length) { console.error("Couldn't find search bar children"); return }
   searchBar.style.display = "flex";
   searchBar.style.flexWrap = "wrap";
   searchBar.style.gap = "10px";
@@ -216,7 +215,8 @@ function fixSearchBarStyling(first = true) {
 function moveSearchBarToTheEnd() {
   const searchBar = document.querySelector("div.search-container");
   if (!searchBar) {
-    throw new Error("Container or Searchbar couldn't found!");
+    console.error("Container or Searchbar couldn't found!");
+    return;
   }
   const parent = searchBar.parentElement;
   parent?.append(searchBar);
@@ -231,7 +231,7 @@ function clearSelectionButton() {
       fontWeight: "bold",
     });
   const headerBox = document.querySelector(".box-header .search-bar");
-  if (!headerBox) throw new Error("Header box doesn't exist!");
+  if (!headerBox) { console.error("Header box doesn't exist!"); return }
 
   button.onclick = (e) => {
     // Send post meesage to inject_script to update vue state
