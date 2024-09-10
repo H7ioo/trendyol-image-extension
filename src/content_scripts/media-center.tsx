@@ -116,8 +116,6 @@ function initiateCopyImageButton({
   })
 
   const textFormat = (length: number) => `${buttonTextContent} (${length} adet)`;
-  // Inject script to access Vue's internal state
-  inject("/js/inject_scripts/media-center.js");
 
   // Listen for messages from inject_script.js
   window.addEventListener("message", function(e) {
@@ -233,7 +231,7 @@ function clearSelectionButton() {
   const headerBox = document.querySelector(".box-header .search-bar");
   if (!headerBox) { console.error("Header box doesn't exist!"); return }
 
-  button.onclick = (e) => {
+  button.onclick = () => {
     // Send post meesage to inject_script to update vue state
     window.postMessage(
       {
@@ -247,6 +245,9 @@ function clearSelectionButton() {
 }
 
 window.addEventListener("load", async function() {
+
+  inject("/js/inject_scripts/media-center.js");
+
   initiateCopyImageButton({
     spacing: EXCEL_VERTICAL_SPACE,
     buttonTextContent: "Dikey Fotoğraf Kop.",
