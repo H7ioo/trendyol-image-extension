@@ -85,12 +85,6 @@ function showMessageButtonUI(
   }, ms);
 }
 
-function inject(src: string) {
-  const script = document.createElement("script");
-  script.src = chrome.runtime.getURL(src);
-  const head = document.head || document.documentElement;
-  head.appendChild(script);
-}
 
 function initiateCopyImageButton({
   buttonTextContent,
@@ -118,13 +112,12 @@ function initiateCopyImageButton({
   const textFormat = (length: number) => `${buttonTextContent} (${length} adet)`;
 
   // Listen for messages from inject_script.js
-  window.addEventListener("message", function(e) {
-    const { type, newValues } = e.data;
-    if (type === "GALLERY_ITEM_CHANGE") {
-      if (!newValues) { console.error("Couldn't access the new values!"); return }
-      urls.splice(0, urls.length, ...newValues);
+  receiveMessage({
+    action: "GALLERY_ITEM_CHANGE", callback: (payload) => {
+
+      urls.splice(0, urls.length, ...payload.newValues);
     }
-  });
+  })
 
   const headerBox = document.querySelector(".box-header .search-bar");
   if (!headerBox) { console.error("Header box doesn't exist!"); return }
@@ -202,12 +195,11 @@ function fixSearchBarStyling(first = true) {
   });
 
   if (!first) return;
-  window.addEventListener("message", function(e) {
-    const { type } = e.data;
-    if (type === "TAB_CHANGE") {
+  receiveMessage({
+    action: "GALLERY_TAB_CHANGE", callback() {
       fixSearchBarStyling(false);
-    }
-  });
+    },
+  })
 }
 
 function moveSearchBarToTheEnd() {
@@ -233,16 +225,13 @@ function clearSelectionButton() {
 
   button.onclick = () => {
     // Send post meesage to inject_script to update vue state
-    window.postMessage(
-      {
-        type: "GALLERY_ITEM_RESET",
-      },
-      "*"
-    );
+    postMessage({ action: "GALLERY_ITEM_RESET", payload: {} })
   }
 
   headerBox.append(button)
 }
+
+import { inject, postMessage, receiveMessage } from "../utils";
 
 window.addEventListener("load", async function() {
 

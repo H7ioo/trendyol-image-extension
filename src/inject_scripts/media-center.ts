@@ -1,3 +1,5 @@
+import { postMessage, receiveMessage } from "../utils";
+
 type Files = {
   createdAt: number;
   id: number;
@@ -29,7 +31,7 @@ function watchFilesState(_item: Element) {
 
   item.__vue__.$watch(
     "selectedFiles",
-    function(newValue, oldValue) {
+    function (newValue, oldValue) {
       const oldValuesIds = oldValue.map((val) => val.id);
       const newValuesIds = newValue.map((val) => val.id);
       const newAddedValue = newValue.filter(
@@ -46,24 +48,23 @@ function watchFilesState(_item: Element) {
       if (newAddedValue.length) {
         GLOBAL_URLS.add(newAddedValue[0]!.url);
       } else {
-        GLOBAL_URLS.delete(newRemovedValue[0]!.url)
+        GLOBAL_URLS.delete(newRemovedValue[0]!.url);
       }
-      window.postMessage(
-        {
-          type: "GALLERY_ITEM_CHANGE",
-          newValues: GLOBAL_URLS,
-        },
-        "*"
-      );
+      postMessage({
+        action: "GALLERY_ITEM_CHANGE",
+        payload: { newValues: GLOBAL_URLS },
+      });
     },
     { deep: true }
   );
-
 }
 
 function watchGalleryItemChange() {
   const pageContainer = document.querySelector(".page-container");
-  if (!pageContainer) { console.log("Couldn't find pageContainer!"); return; }
+  if (!pageContainer) {
+    console.log("Couldn't find pageContainer!");
+    return;
+  }
   watchFilesState(pageContainer);
 }
 
@@ -72,7 +73,7 @@ function watchTabChange() {
     for (let mutation of mutations) {
       if (mutation.type !== "attributes" && mutation.attributeName !== "class")
         return;
-      window.postMessage({ type: "TAB_CHANGE" }, "*");
+      postMessage({ action: "GALLERY_TAB_CHANGE", payload: {} });
     }
   });
 
@@ -84,9 +85,9 @@ function watchTabChange() {
 }
 
 function resetGalleryItem() {
-  window.addEventListener("message", function(e) {
-    const { type } = e.data;
-    if (type === "GALLERY_ITEM_RESET") {
+  receiveMessage({
+    action: "GALLERY_ITEM_RESET",
+    callback() {
       const _pageContainer = document.querySelector(".page-container");
       if (!_pageContainer) {
         console.error("Couldn't find gallery item!");
@@ -102,23 +103,18 @@ function resetGalleryItem() {
       galleryItem.__vue__.selectedFiles.forEach((f) => (f.isChecked = false));
 
       GLOBAL_URLS = new Set([]);
-      window.postMessage(
-        {
-          type: "GALLERY_ITEM_CHANGE",
-          newValues: [],
-        },
-        "*"
-      );
-    }
+      postMessage({
+        action: "GALLERY_ITEM_CHANGE",
+        payload: { newValues: [] },
+      });
+    },
   });
 }
 
 (() => {
-
   watchGalleryItemChange();
 
   watchTabChange();
 
   resetGalleryItem();
-
 })();

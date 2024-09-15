@@ -24,6 +24,7 @@ module.exports = {
     background: path.join(srcDir, "background.ts"),
     ...generateEntries("content_scripts/**/*.tsx"),
     ...generateEntries("inject_scripts/**/*.ts"),
+    ...generateEntries("/*.ts"),
   },
   output: {
     path: path.join(__dirname, "../dist/js"), // Output all files to the `dist/js` directory

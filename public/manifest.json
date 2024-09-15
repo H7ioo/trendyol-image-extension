@@ -15,9 +15,18 @@
   },
 
   "content_scripts": [
+
+    {
+      "matches": ["https://partner.trendyol.com/*"],
+      "js": ["js/vendor.js"]
+    },
+    {
+      "matches": ["https://partner.trendyol.com/video-center/create/*", "https://partner.trendyol.com/video-center/update/*"],
+      "js": ["js/content_scripts/video-center.js"]
+    },
     {
       "matches": ["https://partner.trendyol.com/products/media-center"],
-      "js": ["js/vendor.js", "js/content_scripts/media-center.js"]
+      "js": ["js/content_scripts/media-center.js"]
     }
   ],
 
@@ -30,6 +39,10 @@
   "host_permissions": ["https://partner.trendyol.com/"],
 
   "web_accessible_resources": [
+    {
+      "resources": ["js/utils.js"],
+      "matches": ["<all_urls>"]
+    },
     {
       "resources": ["js/inject_scripts/*.js"],
       "matches": ["https://partner.trendyol.com/*"]
