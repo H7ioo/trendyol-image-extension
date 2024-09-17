@@ -1,4 +1,4 @@
-import { postMessage, receiveMessage } from "../utils";
+import { postMessage, receiveMessage, sleep, waitForElm } from "../utils";
 
 type Files = {
   createdAt: number;
@@ -13,7 +13,7 @@ type Files = {
 // I used sets because I might have several watch on the same element so I don't want to handle unwatching
 let GLOBAL_URLS: Set<string> = new Set([]);
 
-function watchFilesState(_item: Element) {
+async function watchFilesState(_item: Element) {
   const item = _item as Element & {
     __vue__: {
       selectedFiles: Files;
@@ -28,6 +28,9 @@ function watchFilesState(_item: Element) {
       ) => void;
     };
   };
+
+  // Wait for element to exist before watching it
+  await waitForElm(".gallery-item");
 
   item.__vue__.$watch(
     "selectedFiles",
@@ -62,7 +65,7 @@ function watchFilesState(_item: Element) {
 function watchGalleryItemChange() {
   const pageContainer = document.querySelector(".page-container");
   if (!pageContainer) {
-    console.log("Couldn't find pageContainer!");
+    console.error("Couldn't find pageContainer!");
     return;
   }
   watchFilesState(pageContainer);

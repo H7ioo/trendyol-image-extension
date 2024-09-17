@@ -85,7 +85,6 @@ function showMessageButtonUI(
   }, ms);
 }
 
-
 function initiateCopyImageButton({
   buttonTextContent,
   spacing,
@@ -96,31 +95,36 @@ function initiateCopyImageButton({
   // For proxy to work you shouldn't assign urls to anything because this will override the proxy. Use array methods instead.
   let _urls: string[] = [];
   let urls = new Proxy(_urls, {
-    set: function(target, key, value) {
+    set: function (target, key, value) {
       if (key === "length") {
         button.disabled = value < 1;
-        value < 1 ? button.style.opacity = ".65" : button.style.opacity = "1";
-        updateButtonUI(button, textFormat(value))
+        value < 1
+          ? (button.style.opacity = ".65")
+          : (button.style.opacity = "1");
+        updateButtonUI(button, textFormat(value));
       }
       // @ts-ignore
       target[key] = value;
       return true;
+    },
+  });
 
-    }
-  })
-
-  const textFormat = (length: number) => `${buttonTextContent} (${length} adet)`;
+  const textFormat = (length: number) =>
+    `${buttonTextContent} (${length} adet)`;
 
   // Listen for messages from inject_script.js
   receiveMessage({
-    action: "GALLERY_ITEM_CHANGE", callback: (payload) => {
-
+    action: "GALLERY_ITEM_CHANGE",
+    callback: (payload) => {
       urls.splice(0, urls.length, ...payload.newValues);
-    }
-  })
+    },
+  });
 
   const headerBox = document.querySelector(".box-header .search-bar");
-  if (!headerBox) { console.error("Header box doesn't exist!"); return }
+  if (!headerBox) {
+    console.error("Header box doesn't exist!");
+    return;
+  }
 
   const button = createButton(textFormat(urls.length), {
     fontSize: "12px",
@@ -154,7 +158,10 @@ function initiateCopyImageButton({
 function fixDropzoneOverflow() {
   const dropzone: HTMLDivElement | null =
     document.querySelector("div.dropzone");
-  if (!dropzone) { console.error("Dropzone not found!"); return }
+  if (!dropzone) {
+    console.error("Dropzone not found!");
+    return;
+  }
   dropzone.style.overflowY = "auto";
 }
 
@@ -166,7 +173,10 @@ function fixSearchKeyPress() {
   const container = document.querySelector("div.search-container");
   const input = container?.querySelector("input");
   const button = container?.querySelector("button");
-  if (!input || !button) { console.error("Couldn't find input or button!"); return }
+  if (!input || !button) {
+    console.error("Couldn't find input or button!");
+    return;
+  }
   input.onkeyup = (e) => {
     if (e.key === "Enter") {
       button.click();
@@ -177,12 +187,18 @@ function fixSearchKeyPress() {
 function fixSearchBarStyling(first = true) {
   const searchBar: HTMLDivElement | null =
     document.querySelector("div.search-bar");
-  if (!searchBar) { console.error("Couldn't find search bar!"); return }
+  if (!searchBar) {
+    console.error("Couldn't find search bar!");
+    return;
+  }
   const searchBarChildren = Array.from(searchBar.children) as (
     | HTMLDivElement
     | HTMLButtonElement
   )[];
-  if (!searchBarChildren.length) { console.error("Couldn't find search bar children"); return }
+  if (!searchBarChildren.length) {
+    console.error("Couldn't find search bar children");
+    return;
+  }
   searchBar.style.display = "flex";
   searchBar.style.flexWrap = "wrap";
   searchBar.style.gap = "10px";
@@ -196,10 +212,11 @@ function fixSearchBarStyling(first = true) {
 
   if (!first) return;
   receiveMessage({
-    action: "GALLERY_TAB_CHANGE", callback() {
+    action: "GALLERY_TAB_CHANGE",
+    callback() {
       fixSearchBarStyling(false);
     },
-  })
+  });
 }
 
 function moveSearchBarToTheEnd() {
@@ -213,28 +230,29 @@ function moveSearchBarToTheEnd() {
 }
 
 function clearSelectionButton() {
-  const button = createButton("Seçilenleri Kaldır",
-    {
-      fontSize: "12px",
-      backgroundColor: "#f27a1a",
-      color: "white",
-      fontWeight: "bold",
-    });
+  const button = createButton("Seçilenleri Kaldır", {
+    fontSize: "12px",
+    backgroundColor: "#f27a1a",
+    color: "white",
+    fontWeight: "bold",
+  });
   const headerBox = document.querySelector(".box-header .search-bar");
-  if (!headerBox) { console.error("Header box doesn't exist!"); return }
+  if (!headerBox) {
+    console.error("Header box doesn't exist!");
+    return;
+  }
 
   button.onclick = () => {
     // Send post meesage to inject_script to update vue state
-    postMessage({ action: "GALLERY_ITEM_RESET", payload: {} })
-  }
+    postMessage({ action: "GALLERY_ITEM_RESET", payload: {} });
+  };
 
-  headerBox.append(button)
+  headerBox.append(button);
 }
 
 import { inject, postMessage, receiveMessage } from "../utils";
 
-window.addEventListener("load", async function() {
-
+window.addEventListener("load", async function () {
   inject("/js/inject_scripts/media-center.js");
 
   initiateCopyImageButton({
@@ -256,5 +274,4 @@ window.addEventListener("load", async function() {
   clearSelectionButton();
 
   moveSearchBarToTheEnd();
-
 });
